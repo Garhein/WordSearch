@@ -21,7 +21,7 @@ namespace WordSearch.Controllers
             for (int i = 0; i < 100; i++)
             {
                 Grid grid = new Grid(5);
-                grid.GenerateGrid();
+                grid.Generate();
 
                 if (grid.IsValid)
                 {

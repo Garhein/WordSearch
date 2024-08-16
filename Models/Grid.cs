@@ -1,11 +1,14 @@
-﻿namespace WordSearch.Models
+﻿using System.Text.RegularExpressions;
+
+namespace WordSearch.Models
 {
     [Serializable]
     public class Grid
     {
-        public const int MIN_WORD_LENGTH        = 4;
-        public const int MAX_WORD_LENGTH        = 12;
-        public const int DEFAULT_GRID_LENGTH    = 12;
+        public const int    MIN_WORD_LENGTH         = 4;
+        public const int    MAX_WORD_LENGTH         = 12;
+        public const int    DEFAULT_GRID_LENGTH     = 12;
+        public const string CHAR_PATTERN            = ".";
 
         // Longueur de la grille
         private int             _gridLength;
@@ -63,7 +66,7 @@
             this._maxWordLength     = gridLength <= Grid.MAX_WORD_LENGTH ? gridLength : Grid.MAX_WORD_LENGTH;
 
             // Index des colonnes => pour gérer les dépassements en bas
-            for (int i = 0; i < (2 * gridLength * gridLength); i++)
+            for (int i = 0; i < (2 * this.NumberOfCells); i++)
             {
                 this._columnsNumber[i] = (i % gridLength) + 1;
             }
@@ -73,33 +76,6 @@
         /// Génération de la grille.
         /// </summary>
         public void Generate()
-        {
-            // 1ère tentative de génération
-            this.GenerateGrid();
-
-            if (!this.IsValid)
-            {
-                // RàZ des éléments générés
-                this._wordList.Clear();
-
-                for (int i = 0; i < this._gridCells.Length; i++)
-                {
-                    this._gridCells[i] = null;
-                }
-
-                // 2ème tentative de génération
-                this.GenerateGrid();
-                if (!this.IsValid)
-                {
-                    throw new Exception("Génération de la grille non valide, veuillez relancer le traitement.");
-                }
-            }   
-        }
-
-        /// <summary>
-        /// Génération de la grille.
-        /// </summary>
-        public void GenerateGrid()
         {
             // Cellule de départ tirée au hasard
             int wordStartPos = this.GenerateRandomValue(0, this.NumberOfCells - 1);
@@ -121,8 +97,6 @@
                     wordStartPos = 0;
                 }
             }
-
-            bool toto = true;
         }
 
         private void PlaceWord(int wordStartPos)
@@ -175,43 +149,62 @@
 
             // Construction du pattern de recherche
             string searchPattern = string.Empty;
-            bool withChars       = false;
 
             for (int i = word.StartPos; i <= word.EndPos; i += increment)
             {
                 if (string.IsNullOrWhiteSpace(this._gridCells[i]))
                 {
-                    searchPattern += "_";
+                    searchPattern += Grid.CHAR_PATTERN;
                 }
                 else
                 {
                     searchPattern += this._gridCells[i];
-                    withChars      = true;
                 }
             }
 
-            // Pas de chevauchement avec un/des mot(s) => ajout du mot
-            if (!withChars)
+            // Si le pattern est un texte entier => pas besoin de placer un nouveau mot
+            if (searchPattern.IndexOf(Grid.CHAR_PATTERN) >= 0)
             {
-                word.WordText = this.DrawWord(string.Empty, wordLength);
+                if (word.IsReversed)
+                {
+                    searchPattern = new string(searchPattern.Reverse().ToArray());
+                }
+
+                word.WordText = this.GetRandomWord(searchPattern);
                 this.AddWord(word);
             }
-            else
-            {
-                // Si le pattern est un texte entier => pas besoin de placer un nouveau mot
-                if (searchPattern.IndexOf("_") >= 0)
-                {
-                    if (word.IsReversed)
-                    {
-                        searchPattern = new string(searchPattern.Reverse().ToArray());
-                    }
-
-                    word.WordText = this.DrawWord(searchPattern, wordLength);
-                    this.AddWord(word);
-                }
-            }
         }
-    
+
+        /// <summary>
+        /// Recherche d'un mot aléatoire à placer dans la grille.
+        /// </summary>
+        /// <param name="searchPattern">Pattern de recherche.</param>
+        /// <returns></returns>
+        private string GetRandomWord(string searchPattern)
+        {
+            string regexPattern         = $"^{searchPattern}$";
+            string word                 = string.Empty;
+            bool isValidWord            = false;
+            IEnumerable<string> words   = File.ReadAllLines(@"C:\Users\Xavier\Documents\Sources\NET\WordSearch\wordDB.txt")[0]
+                                              .Split(";")
+                                              .Where(x => Regex.IsMatch(x, regexPattern, RegexOptions.IgnoreCase));
+
+            if (words != null && words.Any())
+            {
+                do
+                {
+                    word = words.ElementAt(this.GenerateRandomValue(0, words.Count() - 1));
+
+                    if (!this._wordList.Any(x => x.WordTextBase == word))
+                    {
+                        isValidWord = true;
+                    }
+                } while (!isValidWord);
+            }
+
+            return word;
+        }
+
         private void AddWord(Word word)
         {
             if (word != null && !string.IsNullOrWhiteSpace(word.WordText))
@@ -253,72 +246,6 @@
                         }
                 }
             }
-        }
-
-        private string DrawWord(string searchPattern, int wordLength)
-        {
-            string[] tmp    = File.ReadAllLines(@"C:\Users\Xavier\Documents\Sources\NET\WordSearch\wordDB.txt");
-            string[] dbWord = tmp[0].Split(';');
-            string word     = string.Empty;
-
-            if (string.IsNullOrWhiteSpace(searchPattern))
-            {
-                word = this.DrawWordFromLength(ref dbWord, wordLength);
-            }
-            else
-            {
-                word = this.DrawWordFromPattern(ref dbWord, searchPattern);
-            }
-
-            return word;
-        }
-
-        private string DrawWordFromLength(ref string[] dbWord, int wordLength)
-        {
-            return dbWord[this.GenerateRandomValue(0, dbWord.Length - 1)];
-        }
-
-        private string DrawWordFromPattern(ref string[] dbWord, string searchPattern)
-        {
-            string word         = string.Empty;
-            char[] charsPattern = searchPattern.ToArray();
-            char[] charsDbWord  = null;
-            bool equalToPattern = true;
-            int i = 0;
-            int j = 0;
-
-            do
-            {
-                equalToPattern = true;
-
-                if (dbWord[i].Length == searchPattern.Length)
-                {
-                    charsDbWord = dbWord[i].ToArray();
-                    j = 0;
-
-                    do
-                    {
-                        equalToPattern = charsPattern[j] == '_' || charsPattern[j] == charsDbWord[j];
-                        j++;
-                    } while (equalToPattern && j < searchPattern.Length);
-
-                    if (equalToPattern)
-                    {
-                        word = dbWord[i];
-
-                        // Vérifier si le mot est déjà présent dans la liste
-                        // Si déplacée plus haut, possibilité de boucle infinie car on retrouve le mot déjà placé
-                        if (!this._wordList.Any(x => x.WordTextBase == word))
-                        {
-                            i = dbWord.Length;
-                        }
-                    }
-                }
-
-                i++;
-            } while (i < dbWord.Length);
-
-            return word;
         }
 
         /// <summary>
