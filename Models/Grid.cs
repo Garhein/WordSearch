@@ -105,7 +105,7 @@ namespace WordSearch.Models
         /// <param name="wordStartPos">Index de la cellule contenant le premier caractère du mot à placer.</param>
         private void PlaceWord(int wordStartPos)
         {
-            int wordLength  = this._gridLength; // random.Next(Grid.MIN_WORD_LENGTH, this._maxWordLength);
+            int wordLength  = this.GenerateRandomValue(Grid.MIN_WORD_LENGTH, this._maxWordLength);
             int increment   = 1;
 
             Word word  = new Word()
