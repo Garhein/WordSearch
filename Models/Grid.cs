@@ -99,6 +99,10 @@ namespace WordSearch.Models
             }
         }
 
+        /// <summary>
+        /// Placement d'un mot dans la grille.
+        /// </summary>
+        /// <param name="wordStartPos">Index de la cellule contenant le premier caractère du mot à placer.</param>
         private void PlaceWord(int wordStartPos)
         {
             int wordLength  = this._gridLength; // random.Next(Grid.MIN_WORD_LENGTH, this._maxWordLength);
@@ -205,6 +209,10 @@ namespace WordSearch.Models
             return word;
         }
 
+        /// <summary>
+        /// Ajout d'un mot dans la grille.
+        /// </summary>
+        /// <param name="word">Mot à ajouter.</param>
         private void AddWord(Word word)
         {
             if (word != null && !string.IsNullOrWhiteSpace(word.WordText))
