@@ -1,0 +1,37 @@
+@model SearchWordModel;
+
+<div class="row" id="row-param-grid">
+    <!-- V1 -> Sélection du nombre de colonnes -->
+    <!-- V2 -> Sélection du nombre de lignes -->
+    <button type="button" class="btn btn-primary btn-sm">Générer une grille</button>
+</div>
+
+<hr/>
+
+<div class="row" id="row-container-grid">
+    <div class="col-12">
+        <div class="row" id="row-words-list">
+            <div class="col-12">
+                @string.Join(" ; ", Model.Grid.WordList.Select(x => x.WordTextBase))
+            </div>
+        </div>
+        <div class="row" id="row-word-search-grid">
+            <div class="col-12">
+                @for (int i = 0; i < Model.Grid.GridCells.Length; i++)
+                {
+                    if (i % Model.Grid.GridLength == 0)
+                    {
+                        <div class="grid-row">
+                            @for (int iCell = 0; iCell < Model.Grid.GridLength; iCell++)
+                            {
+                                <div class="grid-cell d-inline-flex justify-content-center align-items-center">
+                                    @Model.PrintCharacter(i + iCell)
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

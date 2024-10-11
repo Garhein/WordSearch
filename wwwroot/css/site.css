@@ -20,3 +20,51 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/*
+.grid-row {
+    border-top: 1px solid #000;
+}
+
+.grid-row:last-child {
+    border-bottom: 1px solid #000;
+}
+
+.grid-row .grid-cell {
+    border-left: 1px solid #000;
+}
+
+.grid-row .grid-cell:last-child {
+    border-right: 1px solid #000;
+}
+
+.grid-cell {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    height: 2.5rem;
+    width: 2.5rem;
+}
+*/
+
+
+.grid-row:first-child .grid-cell {
+    border-top: 1px solid #000;
+}
+
+.grid-row .grid-cell:first-child {
+    border-left: 1px solid #000;
+}
+
+.grid-row .grid-cell:last-child {
+    border-right: 1px solid #000;
+}
+
+.grid-row:last-child .grid-cell {
+    border-bottom: 1px solid #000;
+}
+
+.grid-cell {
+    height: 2.5rem;
+    width: 2.5rem;
+}

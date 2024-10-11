@@ -22,26 +22,34 @@ namespace WordSearch.Models
         private int[]           _columnsNumber;
 
         /// <summary>
-        /// Nombre de cellules de la grille.
+        /// Longueur de la grille.
         /// </summary>
-        private int NumberOfCells
-        {
-            get
-            {
-                return this._gridLength * this._gridLength;
-            }
-        }
-        
+        public int GridLength => this._gridLength;
+
+        /// <summary>
+        /// Hauteur de la grille.
+        /// </summary>
+        public int GridHeigth => this._gridLength;
+
+        /// <summary>
+        /// Cellules de la grille.
+        /// </summary>
+        public string[] GridCells => this._gridCells;
+
+        /// <summary>
+        /// Liste des mots à trouver.
+        /// </summary>
+        public List<Word> WordList => this._wordList;
+
         /// <summary>
         /// Indique si la grille est valide, c'est-à-dire si toutes les cellules contiennent une lettre.
         /// </summary>
-        public bool IsValid
-        {
-            get
-            {
-                return !this._gridCells.Any(x => string.IsNullOrWhiteSpace(x));
-            }
-        }
+        public bool IsValid => !this._gridCells.Any(x => string.IsNullOrWhiteSpace(x));
+
+        /// <summary>
+        /// Nombre de cellules de la grille.
+        /// </summary>
+        private int NumberOfCells => this._gridLength * this._gridLength;
 
         /// <summary>
         /// Constructeur par défaut.
