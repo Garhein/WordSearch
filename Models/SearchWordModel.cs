@@ -8,9 +8,13 @@ namespace WordSearch.Models
         public Grid Grid { get; set; }
 
         /// <summary>
-        /// Constructeur vide.
+        /// Constructeur.
         /// </summary>
-        public SearchWordModel() { }
+        /// <param name="gridLength">Longueur de la grille.</param>
+        public SearchWordModel(int gridLength) 
+        {
+            this.Grid = new Grid(gridLength);
+        }
 
         public HtmlString PrintCharacter(int pos)
         {
@@ -19,6 +23,10 @@ namespace WordSearch.Models
             if (string.IsNullOrWhiteSpace(retChar))
             {
                 retChar = "&nbsp;";
+            }
+            else
+            {
+                retChar = retChar.ToUpper();
             }
 
             return new HtmlString(retChar);

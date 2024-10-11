@@ -1,25 +1,30 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using WordSearch.Helpers;
 
 namespace WordSearch.Models
 {
+    // TODO: si des cellules sont vides à la fin de la génération ?
+
     [Serializable]
     public class Grid
     {
-        public const int    MIN_WORD_LENGTH         = 4;
-        public const int    MAX_WORD_LENGTH         = 12;
-        public const int    DEFAULT_GRID_LENGTH     = 12;
-        public const string CHAR_PATTERN            = ".";
+        public const int MIN_WORD_LENGTH = 4;
+        public const int MAX_WORD_LENGTH = 12;
+        public const int DEFAULT_GRID_LENGTH = 12;
+        public const string CHAR_PATTERN = "?";
 
         // Longueur de la grille
-        private int             _gridLength;
-        // Taille maximale des mots, adaptée en fonction de la longueur de la grille
-        private int             _maxWordLength;
+        private int _gridLength;
+        // Hauteur de la grille
+        private int _gridHeigth;
+        // Taille maximale des mots
+        private int _maxWordLength;
         // Cellules de la grille, chaque cellule contenant une lettre
-        private string[]        _gridCells;
+        private string[] _gridCells;
         // Liste des mots à trouver
-        private List<Word>      _wordList;
+        private List<Word> _wordList;
         // Numéros des colonnes d'après les index des cellules
-        private int[]           _columnsNumber;
+        private int[] _columnsNumber;
 
         /// <summary>
         /// Longueur de la grille.
@@ -29,7 +34,7 @@ namespace WordSearch.Models
         /// <summary>
         /// Hauteur de la grille.
         /// </summary>
-        public int GridHeigth => this._gridLength;
+        public int GridHeigth => this._gridHeigth;
 
         /// <summary>
         /// Cellules de la grille.
@@ -49,7 +54,12 @@ namespace WordSearch.Models
         /// <summary>
         /// Nombre de cellules de la grille.
         /// </summary>
-        private int NumberOfCells => this._gridLength * this._gridLength;
+        private int NumberOfCells => this._gridLength * this._gridHeigth;
+
+        /// <summary>
+        /// Liste des caractères interdits.
+        /// </summary>
+        private char[] ForbiddenChars => new char[12] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '-' };
 
         /// <summary>
         /// Constructeur par défaut.
@@ -68,6 +78,7 @@ namespace WordSearch.Models
             }
 
             this._gridLength        = gridLength;
+            this._gridHeigth        = gridLength;
             this._wordList          = new List<Word>();
             this._gridCells         = new string[gridLength * gridLength];
             this._columnsNumber     = new int[2 * gridLength * gridLength];
@@ -86,7 +97,7 @@ namespace WordSearch.Models
         public void Generate()
         {
             // Cellule de départ tirée au hasard
-            int wordStartPos = this.GenerateRandomValue(0, this.NumberOfCells - 1);
+            int wordStartPos = RandomHelper.GenerateRandomValue(0, this.NumberOfCells - 1);
 
             // Parcours des cellules
             int pos = 0;
@@ -113,14 +124,14 @@ namespace WordSearch.Models
         /// <param name="wordStartPos">Index de la cellule contenant le premier caractère du mot à placer.</param>
         private void PlaceWord(int wordStartPos)
         {
-            int wordLength  = this.GenerateRandomValue(Grid.MIN_WORD_LENGTH, this._maxWordLength);
+            int wordLength  = RandomHelper.GenerateRandomValue(Grid.MIN_WORD_LENGTH, this._maxWordLength);
             int increment   = 1;
 
             Word word  = new Word()
             {
-                Orientation = (eWordOrientation)this.GenerateRandomValue((int)eWordOrientation.HORIZONTAL, (int)eWordOrientation.VERTICAL),
+                Orientation = (eWordOrientation)RandomHelper.GenerateRandomValue((int)eWordOrientation.HORIZONTAL, (int)eWordOrientation.VERTICAL),
                 StartPos    = wordStartPos,
-                IsReversed  = this.GenerateRandomValue(0, 1) == 1
+                IsReversed  = RandomHelper.GenerateRandomValue(0, 1) == 1
             };
 
             // Calcul des positions de départ et de fin
@@ -182,7 +193,7 @@ namespace WordSearch.Models
                     searchPattern = new string(searchPattern.Reverse().ToArray());
                 }
 
-                word.WordText = this.GetRandomWord(searchPattern);
+                word.WordText = this.GetRandomWord(searchPattern).Result;
                 this.AddWord(word);
             }
         }
@@ -192,26 +203,26 @@ namespace WordSearch.Models
         /// </summary>
         /// <param name="searchPattern">Pattern de recherche.</param>
         /// <returns></returns>
-        private string GetRandomWord(string searchPattern)
+        private async Task<string> GetRandomWord(string searchPattern)
         {
-            string regexPattern         = $"^{searchPattern}$";
-            string word                 = string.Empty;
-            bool isValidWord            = false;
-            IEnumerable<string> words   = File.ReadAllLines(@"C:\Users\Xavier\Documents\Sources\NET\WordSearch\wordDB.txt")[0]
-                                              .Split(";")
-                                              .Where(x => Regex.IsMatch(x, regexPattern, RegexOptions.IgnoreCase));
+            string word         = string.Empty;
+            bool isValidWord    = false;
+            int nbAttempts      = 0;
 
+            List<DatamuseApiResult> words = await DatamuseApiHelper.GetRandomWord(searchPattern);
             if (words != null && words.Any())
             {
-                do
+                while (!isValidWord && nbAttempts < words.Count())
                 {
-                    word = words.ElementAt(this.GenerateRandomValue(0, words.Count() - 1));
+                    word = words.ElementAt(RandomHelper.GenerateRandomValue(0, words.Count() - 1)).word.ToUpper();
 
-                    if (!this._wordList.Any(x => x.WordTextBase == word))
+                    if (!word.ContainsForbiddenChar(this.ForbiddenChars) && !this._wordList.Any(x => x.WordTextBase == word))
                     {
                         isValidWord = true;
                     }
-                } while (!isValidWord);
+
+                    nbAttempts++;
+                }
             }
 
             return word;
@@ -262,18 +273,6 @@ namespace WordSearch.Models
                         }
                 }
             }
-        }
-
-        /// <summary>
-        /// Génération d'une valeur entière aléatoire.
-        /// </summary>
-        /// <param name="minValue">Limite inférieure du nombre aléatoire retourné.</param>
-        /// <param name="maxValue">Limite supérieure du nombre aléatoire retourné.</param>
-        /// <returns></returns>
-        private int GenerateRandomValue(int minValue, int maxValue)
-        {
-            /// Nécessaire de faire +1 sur la valeur maximale car elle est exclue par la méthode <seealso cref="Random.Next(int, int)"/>.
-            return new Random().Next(minValue, maxValue + 1);
         }
     }
 }
