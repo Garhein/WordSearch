@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using WordSearch.Extensions;
 using WordSearch.Helpers;
 
 namespace WordSearch.Models
@@ -8,10 +9,10 @@ namespace WordSearch.Models
     [Serializable]
     public class Grid
     {
-        public const int MIN_WORD_LENGTH = 4;
-        public const int MAX_WORD_LENGTH = 12;
-        public const int DEFAULT_GRID_LENGTH = 12;
-        public const string CHAR_PATTERN = "?";
+        public const int MIN_WORD_LENGTH        = 4;
+        public const int MAX_WORD_LENGTH        = 12;
+        public const int DEFAULT_GRID_LENGTH    = 12;
+        public const string CHAR_PATTERN        = "?";
 
         // Longueur de la grille
         private int _gridLength;
@@ -55,11 +56,6 @@ namespace WordSearch.Models
         /// Nombre de cellules de la grille.
         /// </summary>
         private int NumberOfCells => this._gridLength * this._gridHeigth;
-
-        /// <summary>
-        /// Liste des caractères interdits.
-        /// </summary>
-        private char[] ForbiddenChars => new char[12] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '-' };
 
         /// <summary>
         /// Constructeur par défaut.
@@ -216,7 +212,7 @@ namespace WordSearch.Models
                 {
                     word = words.ElementAt(RandomHelper.GenerateRandomValue(0, words.Count() - 1)).word.ToUpper();
 
-                    if (!word.ContainsForbiddenChar(this.ForbiddenChars) && !this._wordList.Any(x => x.WordTextBase == word))
+                    if (word.ContainsOnlyAlphabetChars() && !this._wordList.Any(x => x.WordTextBase == word))
                     {
                         isValidWord = true;
                     }
